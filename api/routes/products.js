@@ -6,14 +6,24 @@ const Product = require('../models/product');
 
 router.get('/', (req, res,  next) => {
    Product.find()
+   .select('name price _id')
    .exec()
    .then(data => {
+       
        if(data.length > 0) {
-        res.status(200).json(data);
+        const response = {
+            status: true,
+            data: data
+        };
+
+        res.status(200).json(response);
        }else{
-        res.status(404).json({
-            message: "Data Tidak Di Temukan"
-        });  
+        const response = {
+            status: false,
+            data: "Data Tidak Di Temukan"
+        };
+
+        res.status(404).json(response); 
        }
    })
    .catch(err => {
@@ -24,39 +34,57 @@ router.get('/', (req, res,  next) => {
    });
 });
 
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
+    const session = await mongoose.startSession();
     const product = new Product({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         price: req.body.price
     });
-    product.save().then(result => {
-        console.log(result);
+
+    session.startTransaction();
+    try {
+        await product.save();
+
+        await session.commitTransaction();
+
         res.status(200).json({
             message:"Sukses Input Data",
             data: result
         });
-    }).catch(err => {
-        console.log(err);
+
+        session.endSession();
+
+    }catch(err) {
+        await session.abortTransaction();
+        session.endSession();
         res.status(500).json({
             message:"Kesalahan Server",
             error: err
         });
-    });
+    }   
 });
 
 router.get('/:productID', (req, res, next) => {
     const id = req.params.productID;
     Product.findById(id)
+    .select('name price _id')
     .exec()
-    .then(response => {
-        console.log(response);
-        if(response){
+    .then(data => {
+        if(data){
+            const response = {
+                status: true,
+                data: data
+            };
+    
             res.status(200).json(response);
         }else{
-            res.status(404).json({
-                message: "Data Tidak Di Temukan"
-            });  
+            const response = {
+                status: false,
+                data: "Data Tidak Di Temukan"
+            };
+    
+            res.status(404).json(response); 
         }
         
     })
@@ -72,8 +100,13 @@ router.delete('/:productID', (req, res, next) => {
     const id = req.params.productID;
     Product.remove({ _id:id })
     .exec()
-    .then(response => {
-        res.status(200).json(response)
+    .then(data => {
+        const response = {
+            status: true,
+            data: "Sukses Hapus Data"
+        };
+
+        res.status(200).json(response);
     })
     .catch(err => {
         res.status(500).json({
@@ -83,27 +116,55 @@ router.delete('/:productID', (req, res, next) => {
     });
 });
 
-router.post('/ubahData', (req, res, next) => {
+router.post('/ubahData', async (req, res, next) => {
+    const session = await mongoose.startSession();
     const id = req.body.id
-    Product.updateOne({ _id: id },{
-        $set: {
-            name: req.body.name,
-            price: req.body.price
-        }
-    })
-    .exec()
-    .then(response => {
+
+    session.startTransaction();
+    try {
+        await Product.updateOne({ _id: id },{
+            $set: {
+                name: req.body.name,
+                price: req.body.price
+            }
+        }).exec();
+
+        await session.commitTransaction();
+
         res.status(200).json({
-            message:"Sukses Update Data",
-            data: response
+            status:true,
+            data: "Sukses Update Data"
         });
-    })
-    .catch(err => {
+
+        session.endSession();
+
+    }catch(err) {
+        await session.abortTransaction();
+        session.endSession();
         res.status(500).json({
             message:"Kesalahan Server",
             error: err
-       });
-    });
+        });
+    }   
+    // Product.updateOne({ _id: id },{
+    //     $set: {
+    //         name: req.body.name,
+    //         price: req.body.price
+    //     }
+    // })
+    // .exec()
+    // .then(response => {
+        // res.status(200).json({
+        //     status:true,
+        //     data: "Sukses Update Data"
+        // });
+    // })
+    // .catch(err => {
+    //     res.status(500).json({
+    //         message:"Kesalahan Server",
+    //         error: err
+    //    });
+    // });
 });
 
 
