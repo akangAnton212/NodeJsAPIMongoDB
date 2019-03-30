@@ -49,8 +49,8 @@ router.post('/', async (req, res, next) => {
         await session.commitTransaction();
 
         res.status(200).json({
-            message:"Sukses Input Data",
-            data: result
+            status:true,
+            data: "Sukses Input Data"
         });
 
         session.endSession();
@@ -90,7 +90,7 @@ router.get('/:productID', (req, res, next) => {
     })
     .catch(err => {
         console.log(err);
-        res.status(200).json({
+        res.status(500).json({
             error: err
         });
     });
