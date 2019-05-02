@@ -11,22 +11,34 @@ router.get('/', (req, res,  next) => {
    .populate('product', 'name price')
    .exec()
    .then(data => {
-       
-       if(data.length > 0) {
-        const response = {
-            status: true,
-            data: data
-        };
+    const awe = {
+        Orders: data.map((rest) => {
+            return {
+                order_id: rest._id,
+                qty:rest.qty,
+                product:rest.product.name,
+                price:rest.product.price,
+                total: (rest.qty * rest.product.price)
+            };
+        })
+    };
+    res.status(200).json(awe);
+    
+    //    if(data.length > 0) {
+    //     const response = {
+    //         status: true,
+    //         data: data
+    //     };
 
-        res.status(200).json(response);
-       }else{
-        const response = {
-            status: false,
-            data: "Data Tidak Di Temukan"
-        };
+    //     res.status(200).json(response);
+    //    }else{
+    //     const response = {
+    //         status: false,
+    //         data: "Data Tidak Di Temukan"
+    //     };
 
-        res.status(404).json(response); 
-       }
+    //     res.status(404).json(response); 
+    //    }
    })
    .catch(err => {
        res.status(500).json({
